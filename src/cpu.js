@@ -22,6 +22,9 @@ const INT = 0b00011001;
 const ST = 0b00001001;
 const IRET = 0b00011010;
 const PRA = 0b00000111;
+const CMP = 0b00010110;
+const JEQ = 0b00010011;
+const JNE = 0b00010100;
 
 const IM = 5;
 const IS = 6;
@@ -46,6 +49,7 @@ class CPU {
         this.flags = {
             interruptsEnabled: true,
             overflow: false,
+            equal: false
         }
 
 		this.setupBranchTable();
@@ -71,6 +75,9 @@ class CPU {
         bt[ST] = this.ST;
         bt[IRET] = this.IRET;
         bt[PRA] = this.PRA;
+        bt[CMP] = this.CMP;
+        bt[JEQ] = this.JEQ;
+        bt[JNE] = this.JNE;
 
 		this.branchTable = bt;
 	}
@@ -119,6 +126,9 @@ class CPU {
                 break;
             case 'ADD':
                 this.reg[regA] = (valA + valB) & 255;
+                break;
+            case 'CMP':
+                valA === valB ? this.flags.equal = true : this.flags.equal = false;
                 break;
         }
     }
@@ -294,7 +304,37 @@ class CPU {
 
         console.log(String.fromCharCode(this.reg[regA]));
 
-        this.reg.PC;
+        this.reg.PC += 2;
+    }
+
+    CMP() {
+        const regA = this.ram.read(this.reg.PC + 1);
+        const regB = this.ram.read(this.reg.PC + 2);
+
+        this.alu('CMP', regA, regB);
+
+        this.reg.PC += 3;
+    }
+
+    JEQ() {
+        console.log(this.flags.equal);
+        if (this.flags.equal) {
+            const regA = this.ram.read(this.reg.PC + 1);
+
+            this.reg.PC = this.reg[regA];
+        } else {
+            this.reg.PC += 2;
+        }
+    }
+
+    JNE() {
+        if (!this.flags.equal) {
+            const regA = this.ram.read(this.reg.PC + 1);
+
+            this.reg.PC = this.reg[regA];
+        } else {
+            this.reg.PC += 2;
+        }
     }
 }
 
